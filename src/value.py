@@ -20,7 +20,6 @@ class Value:
             (self, other) if isinstance(other, Value) else (self,),
             "+",
         )
-
         def _backward():
             grad_shape = np.broadcast(
                 self.data, other_data if isinstance(other, Value) else other
@@ -51,7 +50,19 @@ class Value:
 
         out._backward = _backward
         return out
+      
+    def mean(self, axis=None, keepdims=False):
+        n = self.data.size if axis is None else self.data.shape[axis]
+        t = np.mean(self.data, axis=axis, keepdims=keepdims)
+        out = Value(t, (self,), "mean")
 
+        def _backward():
+            grad_broadcasted = np.ones_like(self.data) * out.grad / n
+            self.grad += grad_broadcasted
+
+        out._backward = _backward
+        return out
+      
     def __radd__(self, other):
         return self.__add__(other)
 
