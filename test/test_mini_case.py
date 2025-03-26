@@ -1,28 +1,33 @@
-import sys
+
 import os
+import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-
 import numpy as np
-from dense_layer import DenseLayer
 from activations import ReLu, Sigmoid
-from loss_functions import LossFunction
-
-X = np.array([[0.1, 0.2, 0.3]])
-y_true = np.array([[1, 0]])
-
-layer1 = DenseLayer(output_size=4, activation=ReLu(), init="Xavier")
-layer2 = DenseLayer(output_size=2, activation=Sigmoid(), init="Xavier")
+from dense_layer import DenseLayer
+from ann import NeuralNetwork
 
 
-out1 = layer1.forward(X)
-out2 = layer2.forward(out1)
-print(out2)
+X = np.array([
+    [0.1, 0.2, 0.3],
+    [0.9, 0.8, 0.7],
+    [0.2, 0.2, 0.3],
+    [0.8, 0.7, 0.6],
+])
 
-loss = LossFunction.mse(y_true, out2)
-print(loss)
-grad = LossFunction.mse_derivative(y_true, out2)
-print(grad)
+Y = np.array([0, 1, 0, 1])
 
-# 
-grad2 = layer2.backward(grad, learning_rate=0.01)
-layer1.backward(grad2, learning_rate=0.01)
+model = NeuralNetwork('mse')
+
+model.add_layer(DenseLayer(output_size=4, activation=ReLu(), init="Xavier"))
+model.add_layer(DenseLayer(output_size=2, activation=Sigmoid(), init="Xavier"))
+
+model.train(
+    X,
+    Y,
+    epochs=100,
+    batch_size=2,
+    learning_rate=0.05,
+    optimizer="gradient_descent",
+    isOne_hot=True
+)
