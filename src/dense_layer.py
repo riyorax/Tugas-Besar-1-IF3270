@@ -107,9 +107,10 @@ class DenseLayer:
         if len(input.shape) > 2:
             input = np.reshape(input, (input.shape[0], input.shape[1]))
 
-        if self.weights is None:
+        if self.weights is None or self.biases is None:
             self.input_size = input.shape[1]
             self._initialize_weights(self.input_size)
+            self._initialize_bias(self.input_size)
 
         self.input = input
         self.linear_output = np.dot(self.input, self.weights) + self.biases
