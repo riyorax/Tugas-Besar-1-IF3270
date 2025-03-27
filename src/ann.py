@@ -3,7 +3,6 @@ from dense_layer import DenseLayer
 from loss_functions import LossFunction
 from value import Value
 import time
-import matplotlib.pyplot as plt
 
 
 # ANN Class
@@ -17,7 +16,6 @@ class NeuralNetwork:
         }
         self.loss_function = self.loss_functions[loss_function_option]
         self.loss = loss_function_option
-        self.last_gradients = []
 
     def add_layer(self, layer):
         self.layers.append(layer)
@@ -162,15 +160,8 @@ class NeuralNetwork:
         return history
 
     def _update_parameters(self, learning_rate):
-        # Make sure last_gradient size is as loong as needed
-        if len(self.last_gradients) < len(self.layers):
-            for _ in range(len(self.layers) - len(self.last_gradients)):
-                self.last_gradients.append(None)
-
-        for i, layer in enumerate(self.layers):
+        for layer in self.layers:
             if hasattr(layer, "weights") and hasattr(layer, "biases"):
-                self.last_gradients[i] = layer.weights.grad.copy()
-
                 layer.weights.data -= learning_rate * layer.weights.grad
                 layer.biases.data -= learning_rate * layer.biases.grad
 
@@ -179,90 +170,6 @@ class NeuralNetwork:
 
     def predict(self, X):
         return self.forward(X).data
-
-    def plot_weight_distribution(self, layer_indices=None):
-        # Find layers with weights
-        if layer_indices is None:
-            layer_indices = [
-                i for i, layer in enumerate(self.layers) if hasattr(layer, "weights")
-            ]
-
-        num_layers = len(layer_indices)
-        if num_layers == 0:
-            print("No layers with weights found.")
-            return
-
-        fig, axes = plt.subplots(1, num_layers, figsize=(5 * num_layers, 5))
-        if num_layers == 1:
-            axes = [axes]
-
-        # Create subplot for each layer
-        for i, layer_idx in enumerate(layer_indices):
-            if layer_idx >= len(self.layers) or not hasattr(
-                self.layers[layer_idx], "weights"
-            ):
-                print(f"Layer {layer_idx} does not exist or doesn't have weights.")
-                continue
-
-            weights = self.layers[layer_idx].weights.data.flatten()
-
-            axes[i].hist(weights, bins=50, alpha=0.7)
-            axes[i].set_title(f"Layer {layer_idx} Weight Distribution")
-            axes[i].set_xlabel("Weight Value")
-            axes[i].set_ylabel("Frequency")
-            axes[i].grid(True, alpha=0.3)
-
-        plt.tight_layout()
-        plt.show()
-
-    def plot_gradient_distribution(self, layer_indices=None, log_scale=True):
-        if not hasattr(self, "last_gradients"):
-            print(
-                "No gradients have been stored yet. Run at least one training step first."
-            )
-            return
-
-        # Find all layers with weights
-        if layer_indices is None:
-            layer_indices = [
-                i for i, layer in enumerate(self.layers) if hasattr(layer, "weights")
-            ]
-
-        num_layers = len(layer_indices)
-        if num_layers == 0:
-            print("No layers with weights found.")
-            return
-
-        # Create subplot grid
-        fig, axes = plt.subplots(1, num_layers, figsize=(5 * num_layers, 5))
-        if num_layers == 1:
-            axes = [axes]
-
-        for i, layer_idx in enumerate(layer_indices):
-            if layer_idx >= len(self.layers) or not hasattr(
-                self.layers[layer_idx], "weights"
-            ):
-                print(f"Layer {layer_idx} does not exist or doesn't have weights.")
-                continue
-
-            gradients = self.last_gradients[layer_idx].flatten()
-
-            n, bins, patches = axes[i].hist(gradients, bins=50, alpha=0.7)
-
-            # Set log if needed
-            if log_scale:
-                axes[i].set_yscale("log")
-
-            axes[i].set_title(f"Layer {layer_idx} Gradient Distribution")
-            axes[i].set_xlabel("Gradient Value")
-            axes[i].set_ylabel("Frequency (log scale)" if log_scale else "Frequency")
-
-            axes[i].ticklabel_format(axis="x", style="sci", scilimits=(-4, 4))
-
-            axes[i].grid(True, alpha=0.3)
-
-        plt.tight_layout()
-        plt.show()
 
 
 def print_parameters(layer, num_elements=5):
