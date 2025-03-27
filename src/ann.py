@@ -4,7 +4,7 @@ from loss_functions import LossFunction
 from value import Value
 import time
 import matplotlib.pyplot as plt
-
+from visualizer import visualize_ann
 
 # ANN Class
 class NeuralNetwork:
@@ -19,6 +19,11 @@ class NeuralNetwork:
         self.loss = loss_function_option
         self.last_gradients = []
         self.current_history = None
+        self.n_features = None
+
+    def visualize(self, output_dir = None, filename='ann'):
+        if (self.n_features is not None):
+            visualize_ann(model=self,input_shape=self.n_features,filename=filename,output_dir=output_dir)
 
     def add_layer(self, layer):
         self.layers.append(layer)
@@ -62,7 +67,7 @@ class NeuralNetwork:
         validation_data=None,
         isOne_hot=False,
     ):
-
+        self.n_features = X.shape[1]
         n_samples = X.shape[0]
         n_batches = int(np.ceil(n_samples / batch_size))
 
@@ -182,7 +187,7 @@ class NeuralNetwork:
     def predict(self, X):
         return self.forward(X).data
 
-    def plot_weight_distribution(self, layer_indices=None):
+    def plot_weight_distribution(self, layer_indices=None, title=''):
         # Find layers with weights
         if layer_indices is None:
             layer_indices = [
@@ -195,6 +200,7 @@ class NeuralNetwork:
             return
 
         fig, axes = plt.subplots(1, num_layers, figsize=(5 * num_layers, 5))
+        fig.suptitle(title, fontsize=16)
         if num_layers == 1:
             axes = [axes]
 
@@ -217,7 +223,7 @@ class NeuralNetwork:
         plt.tight_layout()
         plt.show()
 
-    def plot_gradient_distribution(self, layer_indices=None, log_scale=True):
+    def plot_gradient_distribution(self, layer_indices=None, log_scale=True,title=''):
         if not hasattr(self, "last_gradients"):
             print(
                 "No gradients have been stored yet. Run at least one training step first."
@@ -237,6 +243,7 @@ class NeuralNetwork:
 
         # Create subplot grid
         fig, axes = plt.subplots(1, num_layers, figsize=(5 * num_layers, 5))
+        fig.suptitle(title, fontsize=16)
         if num_layers == 1:
             axes = [axes]
 
@@ -266,10 +273,10 @@ class NeuralNetwork:
         plt.tight_layout()
         plt.show()
     
-    def plot_training(self):
+    def plot_training(self, title=''):
         if self.current_history is not None:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-
+            fig.suptitle(title, fontsize=16)
             ax1.plot(self.current_history["loss"], label="Train Loss")
             if "val_loss" in self.current_history and self.current_history["val_loss"]:
                 ax1.plot(self.current_history["val_loss"], label="Validation Loss")
