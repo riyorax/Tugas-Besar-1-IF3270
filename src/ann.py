@@ -18,6 +18,7 @@ class NeuralNetwork:
         self.loss_function = self.loss_functions[loss_function_option]
         self.loss = loss_function_option
         self.last_gradients = []
+        self.current_history = None
 
     def add_layer(self, layer):
         self.layers.append(layer)
@@ -158,7 +159,8 @@ class NeuralNetwork:
                 print(
                     f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Accuracy: {train_accuracy:.4f}"
                 )
-
+        
+        self.current_history = history
         return history
 
     def _update_parameters(self, learning_rate):
@@ -263,6 +265,32 @@ class NeuralNetwork:
 
         plt.tight_layout()
         plt.show()
+    
+    def plot_training(self):
+        if self.current_history is not None:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+
+            ax1.plot(self.current_history["loss"], label="Train Loss")
+            if "val_loss" in self.current_history and self.current_history["val_loss"]:
+                ax1.plot(self.current_history["val_loss"], label="Validation Loss")
+            ax1.set_xlabel("Epoch")
+            ax1.set_ylabel("Loss")
+            ax1.set_title("Loss per Epoch")
+            ax1.legend()
+            ax1.grid(True)
+
+            # Accuracy plot
+            ax2.plot(self.current_history["accuracy"], label="Train Accuracy")
+            if "val_accuracy" in self.current_history and self.current_history["val_accuracy"]:
+                ax2.plot(self.current_history["val_accuracy"], label="Validation Accuracy")
+            ax2.set_xlabel("Epoch")
+            ax2.set_ylabel("Accuracy")
+            ax2.set_title("Accuracy per Epoch")
+            ax2.legend()
+            ax2.grid(True)
+
+            plt.tight_layout()
+            plt.show()
 
 
 def print_parameters(layer, num_elements=5):

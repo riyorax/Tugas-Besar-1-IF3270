@@ -69,6 +69,8 @@ class DenseLayer:
         self.weights = Value(weights_data, label="weights")
 
     def _initialize_bias(self, input_size):
+        if self.seed is not None:
+          np.random.seed(self.seed + 1)
         if self.bias_init == "random":
             bias_data = np.random.randn(1, self.output_size) - 0.5
         elif self.bias_init == "Xavier":

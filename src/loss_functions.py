@@ -31,7 +31,12 @@ class LossFunction:
         # Add small epsilon to avoid log(0)
         epsilon = 1e-7
         clipped_pred = y_pred.clip(epsilon, 1 - epsilon)
-        loss = -(y_true * clipped_pred.log() + (1 - y_true) * (1 - clipped_pred).log())
+        
+        # Use multiplication by -1 instead of negation
+        term1 = y_true * clipped_pred.log()
+        term2 = (1 - y_true) * (1 - clipped_pred).log()
+        loss = (term1 + term2) * (-1)  # Multiply by -1 instead of using negation
+        
         return loss.mean()
 
     @staticmethod
@@ -42,8 +47,15 @@ class LossFunction:
         # Add small epsilon to avoid log(0)
         epsilon = 1e-7
         clipped_pred = y_pred.clip(epsilon, 1 - epsilon)
-        loss = -(y_true * clipped_pred.log()).sum(axis=1)
+        
+        # Use multiplication by -1 instead of negation
+        log_probs = clipped_pred.log()
+        weighted_log_probs = y_true * log_probs
+        summed = weighted_log_probs.sum(axis=1)
+        loss = summed * (-1)
+        
         return loss.mean()
+
 
     # Wont be used with autodiff
     @staticmethod

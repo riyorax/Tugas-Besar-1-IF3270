@@ -113,7 +113,17 @@ class Value:
 
         out._backward = _backward
         return out
+      
 
+    def __neg__(self):
+        out = Value(-self.data, (self,), "-")
+        
+        def _backward():
+            self.grad -= out.grad
+            
+        out._backward = _backward
+        return out
+        
     def __rmul__(self, other):
         return self.__mul__(other)
 
@@ -172,8 +182,47 @@ class Value:
         out = Value(t, (self,), "softmax")
 
         def _backward():
-            self.grad += out.grad
+            n = self.data.shape[0]
+            
+            for i in range(n):
+                softmax_i = t[i].reshape(-1, 1)
+                grad_i = out.grad[i].reshape(-1, 1)
+                
+                jacobian = np.diagflat(softmax_i) - np.dot(softmax_i, softmax_i.T)
+                
+                self.grad[i] += np.dot(jacobian, grad_i).flatten()
 
+        out._backward = _backward
+        return out
+      
+    def log(self):
+        t = np.log(self.data)
+        out = Value(t, (self,), "log")
+
+        def _backward():
+            self.grad += (1 / self.data) * out.grad
+
+        out._backward = _backward
+        return out
+    
+    def sum(self, axis=None, keepdims=False):
+        t = np.sum(self.data, axis=axis, keepdims=keepdims)
+        out = Value(t, (self,), "sum")
+        
+        def _backward():
+            if axis is not None and not keepdims:
+                expanded_grad = out.grad
+                
+                axes = [axis] if not isinstance(axis, tuple) else list(axis)
+                axes.sort(reverse=True)
+                
+                for ax in axes:
+                    expanded_grad = np.expand_dims(expanded_grad, axis=ax)
+                    
+                self.grad += expanded_grad
+            else:
+                self.grad += out.grad
+        
         out._backward = _backward
         return out
 
