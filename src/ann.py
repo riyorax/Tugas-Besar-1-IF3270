@@ -15,6 +15,7 @@ class NeuralNetwork:
             "categorical_cross_entropy": LossFunction.categorical_cross_entropy,
         }
         self.loss_function = self.loss_functions[loss_function_option]
+        self.loss = loss_function_option
 
     def add_layer(self, layer):
         self.layers.append(layer)
@@ -57,7 +58,6 @@ class NeuralNetwork:
         verbose=1,
         validation_data=None,
         isOne_hot=False,
-        softmax_logloss=False,
     ):
 
         n_samples = X.shape[0]

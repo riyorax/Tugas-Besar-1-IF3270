@@ -1,0 +1,78 @@
+
+#network {
+  width: 100%;
+  height: 90vw;
+  border: 1px solid lightgray;
+  margin-bottom: 20px;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.info {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.legend {
+  display: flex;
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+}
+
+.legend-color {
+  width: 20px;
+  height: 3px;
+  margin-right: 5px;
+}
+
+.legend-color.dashed {
+  border-top: 2px dashed #000;
+}
+
+.legend-label {
+  font-size: 14px;
+}
+
+.input-node {
+  background-color: lightblue;
+  border: 1px solid #2B7CE9;
+}
+
+.hidden-node {
+  background-color: #FFFF99;
+  border: 1px solid #FFA500;
+}
+
+.output-node {
+  background-color: #FF9999;
+  border: 1px solid #FF0000;
+}
+
+.bias-node {
+  background-color: #E6E6E6;
+  border: 1px solid #666666;
+}
