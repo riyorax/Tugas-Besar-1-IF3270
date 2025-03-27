@@ -2,8 +2,7 @@ import numpy as np
 from dense_layer import DenseLayer
 from loss_functions import LossFunction
 from value import Value
-
-# from loss_function import LossFunction
+import time
 
 
 # ANN Class
@@ -11,9 +10,9 @@ class NeuralNetwork:
     def __init__(self, loss_function_option):
         self.layers = []
         self.loss_functions = {
-            "mse": self.mse,
-            "log_loss": self.binary_cross_entropy,
-            "categorical_cross_entropy": self.categorical_cross_entropy,
+            "mse": LossFunction.mse,
+            "binary_cross_entropy": LossFunction.binary_cross_entropy,
+            "categorical_cross_entropy": LossFunction.categorical_cross_entropy,
         }
         self.loss_function = self.loss_functions[loss_function_option]
 
@@ -30,42 +29,23 @@ class NeuralNetwork:
             x = layer.forward(x)
         return x
 
-    def mse(self, y_true, y_pred):
-        if not isinstance(y_true, Value):
-            y_true = Value(y_true)
+    def _progress_bar(
+        self, current, total, bar_length=50, training_loss=None, val_loss=None
+    ):
+        progress = min(1.0, current / total)
+        arrow = "=" * int(round(progress * bar_length) - 1) + ">"
+        spaces = " " * (bar_length - len(arrow))
 
-        if len(y_true.data.shape) == 1 and len(y_pred.data.shape) == 2:
-            num_classes = y_pred.data.shape[1]
-            batch_size = y_true.data.shape[0]
+        if training_loss is not None and val_loss is not None:
+            print(
+                f"\r[{arrow + spaces}] {int(progress * 100)}% - loss: {training_loss:.4f} - val_loss: {val_loss:.4f}",
+                end="",
+            )
+        else:
+            print(f"\r[{arrow + spaces}] {int(progress * 100)}%", end="")
 
-            one_hot = np.zeros((batch_size, num_classes))
-            for i in range(batch_size):
-                if 0 <= y_true.data[i] < num_classes:
-                    one_hot[i, int(y_true.data[i])] = 1
-
-            y_true = Value(one_hot)
-
-        diff = y_pred - y_true
-        squared = diff * diff
-        return squared.mean()
-
-    def binary_cross_entropy(self, y_true, y_pred):
-        if not isinstance(y_true, Value):
-            y_true = Value(y_true)
-        # Add small epsilon to avoid log(0)
-        epsilon = 1e-7
-        clipped_pred = y_pred.clip(epsilon, 1 - epsilon)
-        loss = -(y_true * clipped_pred.log() + (1 - y_true) * (1 - clipped_pred).log())
-        return loss.mean()
-
-    def categorical_cross_entropy(self, y_true, y_pred):
-        if not isinstance(y_true, Value):
-            y_true = Value(y_true)
-        # Add small epsilon to avoid log(0)
-        epsilon = 1e-7
-        clipped_pred = y_pred.clip(epsilon, 1 - epsilon)
-        loss = -(y_true * clipped_pred.log()).sum(axis=1)
-        return loss.mean()
+        if current == total:
+            print()
 
     def train(
         self,
@@ -79,8 +59,6 @@ class NeuralNetwork:
         isOne_hot=False,
         softmax_logloss=False,
     ):
-        import time
-        import numpy as np
 
         n_samples = X.shape[0]
         n_batches = int(np.ceil(n_samples / batch_size))
@@ -88,16 +66,21 @@ class NeuralNetwork:
         y_orig = Y.copy()
 
         if isOne_hot:
-            Y = self._one_hot(Y)
+            Y = one_hot(Y) if not hasattr(self, "_one_hot") else self._one_hot(Y)
 
-        history = {"loss": [], "val_loss": []}
+        history = {"loss": [], "val_loss": [], "accuracy": [], "val_accuracy": []}
 
         has_validation = validation_data is not None
 
         if has_validation:
             X_val, Y_val = validation_data
+            y_val_orig = Y_val.copy()
             if isOne_hot:
-                Y_val = self._one_hot(Y_val)
+                Y_val = (
+                    one_hot(Y_val)
+                    if not hasattr(self, "_one_hot")
+                    else self._one_hot(Y_val)
+                )
 
         for epoch in range(epochs):
             epoch_start_time = time.time()
@@ -128,33 +111,51 @@ class NeuralNetwork:
 
                 total_loss += loss.data
 
+                if verbose == 1:
+                    self._progress_bar(batch_idx + 1, n_batches)
+
             avg_loss = total_loss / n_batches
             history["loss"].append(avg_loss)
 
+            train_output = self.forward(X)
+            train_pred = (
+                np.argmax(train_output.data, axis=1)
+                if train_output.data.shape[1] > 1
+                else (train_output.data > 0.5).astype(int)
+            )
+            train_accuracy = np.sum(train_pred == y_orig) / y_orig.size
+            history["accuracy"].append(train_accuracy)
+
             val_loss = None
+            val_accuracy = None
             if has_validation:
                 val_output = self.forward(X_val)
                 val_loss = self.loss_function(Y_val, val_output).data
                 history["val_loss"].append(val_loss)
+
+                val_pred = (
+                    np.argmax(val_output.data, axis=1)
+                    if val_output.data.shape[1] > 1
+                    else (val_output.data > 0.5).astype(int)
+                )
+                val_accuracy = np.sum(val_pred == y_val_orig) / y_val_orig.size
+                history["val_accuracy"].append(val_accuracy)
 
             epoch_time = time.time() - epoch_start_time
 
             if verbose == 1:
                 if has_validation:
                     print(
-                        f"\rEpoch {epoch+1}/{epochs} - {epoch_time:.2f}s - loss: {avg_loss:.4f} - val_loss: {val_loss:.4f}"
+                        f"\rEpoch {epoch+1}/{epochs} - {epoch_time:.2f}s - loss: {avg_loss:.4f} - accuracy: {train_accuracy:.4f} - val_loss: {val_loss:.4f} - val_accuracy: {val_accuracy:.4f}"
                     )
                 else:
                     print(
-                        f"\rEpoch {epoch+1}/{epochs} - {epoch_time:.2f}s - loss: {avg_loss:.4f}"
+                        f"\rEpoch {epoch+1}/{epochs} - {epoch_time:.2f}s - loss: {avg_loss:.4f} - accuracy: {train_accuracy:.4f}"
                     )
             elif verbose > 1 and ((epoch + 1) % 10 == 0 or epoch == 0):
-                output = self.forward(X)
-                pred = self._get_predictions(output.data)
-                print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}")
-                if isOne_hot:
-                    accuracy = self._get_accuracy(pred, y_orig)
-                    print(f"Epoch {epoch+1}/{epochs}, accuracy: {accuracy:.4f}")
+                print(
+                    f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Accuracy: {train_accuracy:.4f}"
+                )
 
         return history
 
