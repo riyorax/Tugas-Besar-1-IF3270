@@ -17,8 +17,15 @@ function initializeVisualization(networkData) {
     edge.originalWidth = edge.width || 1.0;
     edge.weightValue = edge.title;
     delete edge.title;
+    
+    if (edge.id.startsWith('bias_edge')) {
+      edge.smooth = {
+        enabled: true,
+        type: 'curvedCW',
+        roundness: 0.3
+      };
+    }
   });
-
   const nodes = new vis.DataSet(networkData.nodes);
   const edges = new vis.DataSet(networkData.edges);
 
@@ -75,7 +82,8 @@ function initializeVisualization(networkData) {
     edges: {
       smooth: {
         type: 'cubicBezier',
-        forceDirection: 'horizontal'
+        forceDirection: 'horizontal',
+        roundness: 0.4
       },
       arrows: {
         to: { enabled: true, scaleFactor: 0.5 }
