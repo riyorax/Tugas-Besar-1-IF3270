@@ -7,71 +7,73 @@
   - [General Information](#general-information)
   - [Technologies Used](#technologies-used)
   - [Features](#features)
-  - [Screenshots](#screenshots)
   - [Setup](#setup)
   - [Usage](#usage)
   - [Project Status](#project-status)
   - [Room for Improvement](#room-for-improvement)
   - [Acknowledgements](#acknowledgements)
-  - [Contact](#contact)
-
 
 ## General Information
 - Project ini diadakan dalam pemenuhan komponen tugas besar IF3170 Pembelajaran Mesin
 - Tujuan dari project ini adalah agar peserta kuliah mendapatkan wawasan tentang bagaimana cara mengimplementasikan Feedforward Neural Network (FFNN).
 
 ## Technologies Used
-- Tech 1 - version 1.0
-- Tech 2 - version 2.0
-- Tech 3 - version 3.0
-
+- Python - version 3.13.1
+- HTML, CSS, JS for visualization (needs to be online so that cdn vis.js works)
 
 ## Features
-List the ready features here:
-- Awesome feature 1
-- Awesome feature 2
-- Awesome feature 3
-
-
-## Screenshots
-![Example screenshot](./img/screenshot.png)
-
+- Custom ANN model with no high level libraries
+- Visualize ANN using vis.js
+- ANN analysis
 
 ## Setup
-What are the project requirements/dependencies? Where are they listed? A requirements.txt or a Pipfile.lock file perhaps? Where is it located?
+1.  Make sure to have python intalled, to check whether or not you have it installed, you can check by typing 
 
-Proceed to describe how to install / setup one's local environment / get started with the project.
+    ```
+    python --version
+    Python 3.13.1
+    ```
 
+2. Install dependencies using pip install and requirements.txt
+    ```
+    pip install -r requirements.txt
+    ```
 
 ## Usage
-How does one go about using it?
-Provide various use cases and code examples here.
+- Our group has completed the analysis in main.ipynb, which can be found at src/main.ipynb
+- We have also provided src/example.ipynb, which users can run to try out our visualization feature. Step by step :
 
-write-your-code-here
+1. Run example.ipynb all the way to the bottom:
 
+    ![alt text](./img/2.png)
+
+2. After the last cell has been executed, an HTML file will be generated in the ann_visualizer/output folder.
+3. Use Live Preview to view the HTML file and the graph.
+
+    ![visualized graph example](./img/visualized_graph_example.png)
+
+4. To view the weight of the edges, users can click said edges, the weight label will then show itself
+
+    ![edges](./img/edges.png)
 
 ## Project Status
-Project is: in progress 
-
+Project is: Done
 
 ## Room for Improvement
-Include areas you believe need improvement / could be improved. Also add TODOs for future development.
-
-Room for improvement:
-- Improvement to be done 1
-- Improvement to be done 2
-
-To do:
-- Feature to be added 1
-- Feature to be added 2
+- Code optimization, training ANN takes too much RAM
+- Code optimization, training ANN takes too much time, reduce time by make it parallel
 
 
 ## Acknowledgements
-Give credit here.
-- This project was inspired by...
-- This project was based on [this tutorial](https://www.example.com).
-- Many thanks to...
+Nama : Maximilian Sulistiyo</br>
+NIM : 13522061 </br>
+Profile Github : [riyorax](https://github.com/riyorax)</br>
 
+Nama : Marvel Pangondian</br>
+NIM : 13522075 </br>
+Profile Github : [MarvelPangondian](https://github.com/MarvelPangondian)</br>
 
-## Contact
-Created by [@flynerdpl](https://www.flynerd.pl/) - feel free to contact me!
+Nama : Abdullah Mubarak</br>
+NIM : 13522101 </br>
+Profile Github : [b33rk](https://github.com/b33rk)</br>
+</br>
