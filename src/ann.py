@@ -186,6 +186,15 @@ class NeuralNetwork:
             if hasattr(layer, "weights") and hasattr(layer, "biases"):
                 self.last_gradients[i] = layer.weights.grad.copy()
 
+                # Apply regularization if needed
+                if hasattr(layer, "reg_type") and layer.reg_type is not None:
+                    if layer.reg_type == "l1":
+                        reg_gradient = layer.reg_param * np.sign(layer.weights.data)
+                        layer.weights.grad += reg_gradient
+                    elif layer.reg_type == "l2":
+                        reg_gradient = layer.reg_param * layer.weights.data
+                        layer.weights.grad += reg_gradient
+
                 layer.weights.data -= learning_rate * layer.weights.grad
                 layer.biases.data -= learning_rate * layer.biases.grad
 
