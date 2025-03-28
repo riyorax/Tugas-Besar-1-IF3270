@@ -5,6 +5,9 @@ from value import Value
 import time
 import matplotlib.pyplot as plt
 from visualizer import visualize_ann
+import pickle
+from activations import *
+
 
 # ANN Class
 class NeuralNetwork:
@@ -21,9 +24,14 @@ class NeuralNetwork:
         self.current_history = None
         self.n_features = None
 
-    def visualize(self, output_dir = None, filename='ann'):
-        if (self.n_features is not None):
-            visualize_ann(model=self,input_shape=self.n_features,filename=filename,output_dir=output_dir)
+    def visualize(self, output_dir=None, filename="ann"):
+        if self.n_features is not None:
+            visualize_ann(
+                model=self,
+                input_shape=self.n_features,
+                filename=filename,
+                output_dir=output_dir,
+            )
 
     def add_layer(self, layer):
         self.layers.append(layer)
@@ -164,7 +172,7 @@ class NeuralNetwork:
                 print(
                     f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Accuracy: {train_accuracy:.4f}"
                 )
-        
+
         self.current_history = history
         return history
 
@@ -187,7 +195,7 @@ class NeuralNetwork:
     def predict(self, X):
         return self.forward(X).data
 
-    def plot_weight_distribution(self, layer_indices=None, title=''):
+    def plot_weight_distribution(self, layer_indices=None, title=""):
         # Find layers with weights
         if layer_indices is None:
             layer_indices = [
@@ -223,7 +231,7 @@ class NeuralNetwork:
         plt.tight_layout()
         plt.show()
 
-    def plot_gradient_distribution(self, layer_indices=None, log_scale=True,title=''):
+    def plot_gradient_distribution(self, layer_indices=None, log_scale=True, title=""):
         if not hasattr(self, "last_gradients"):
             print(
                 "No gradients have been stored yet. Run at least one training step first."
@@ -272,8 +280,8 @@ class NeuralNetwork:
 
         plt.tight_layout()
         plt.show()
-    
-    def plot_training(self, title=''):
+
+    def plot_training(self, title=""):
         if self.current_history is not None:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
             fig.suptitle(title, fontsize=16)
@@ -288,8 +296,13 @@ class NeuralNetwork:
 
             # Accuracy plot
             ax2.plot(self.current_history["accuracy"], label="Train Accuracy")
-            if "val_accuracy" in self.current_history and self.current_history["val_accuracy"]:
-                ax2.plot(self.current_history["val_accuracy"], label="Validation Accuracy")
+            if (
+                "val_accuracy" in self.current_history
+                and self.current_history["val_accuracy"]
+            ):
+                ax2.plot(
+                    self.current_history["val_accuracy"], label="Validation Accuracy"
+                )
             ax2.set_xlabel("Epoch")
             ax2.set_ylabel("Accuracy")
             ax2.set_title("Accuracy per Epoch")
@@ -298,6 +311,119 @@ class NeuralNetwork:
 
             plt.tight_layout()
             plt.show()
+
+    def save(self, filename):
+        # Create a dictionary to store model state
+        model_state = {
+            "loss_function_option": (
+                self.loss.__name__ if hasattr(self.loss, "__name__") else str(self.loss)
+            ),
+            "layer_states": [],
+            "last_gradients": [
+                grad.tolist() if grad is not None else None
+                for grad in self.last_gradients
+            ],
+            "current_history": self.current_history,
+            "n_features": self.n_features,
+        }
+
+        # Save each layer state
+        for layer in self.layers:
+            if hasattr(layer, "weights") and hasattr(layer, "biases"):
+                layer_state = {
+                    "type": "dense",
+                    "weights": layer.weights.data,
+                    "biases": layer.biases.data,
+                    "output_size": layer.output_size,
+                    "init": layer.init,
+                    "bias_init": layer.bias_init,
+                    "mean": layer.mean,
+                    "var": layer.var,
+                    "lower_bound": layer.lower_bound,
+                    "upper_bound": layer.upper_bound,
+                    "seed": layer.seed,
+                    "reg_type": layer.reg_type,
+                    "reg_param": layer.reg_param,
+                }
+
+                if hasattr(layer, "activation") and layer.activation is not None:
+                    if layer.activation == relu:
+                        layer_state["activation"] = "relu"
+                    elif layer.activation == sigmoid:
+                        layer_state["activation"] = "sigmoid"
+                    elif layer.activation == tanh:
+                        layer_state["activation"] = "tanh"
+                    elif layer.activation == softmax:
+                        layer_state["activation"] = "softmax"
+                    elif layer.activation == linear:
+                        layer_state["activation"] = "linear"
+                    else:
+                        layer_state["activation"] = "unknown"
+
+                model_state["layer_states"].append(layer_state)
+
+        with open(filename, "wb") as f:
+            pickle.dump(model_state, f)
+
+        print(f"Model saved to {filename}")
+
+    @staticmethod
+    def load(filename):
+        with open(filename, "rb") as f:
+            model_state = pickle.load(f)
+
+        loaded_model = NeuralNetwork(model_state["loss_function_option"])
+        if "last_gradients" in model_state:
+            loaded_model.last_gradients = [
+                np.array(grad) if grad is not None else None
+                for grad in model_state["last_gradients"]
+            ]
+
+        if "current_history" in model_state:
+            loaded_model.current_history = model_state["current_history"]
+
+        if "n_features" in model_state:
+            loaded_model.n_features = model_state["n_features"]
+
+            activation_map = {
+                "relu": relu,
+                "sigmoid": sigmoid,
+                "tanh": tanh,
+                "softmax": softmax,
+                "linear": linear,
+            }
+
+        # Recreate the layers with the saved configurations
+        for layer_state in model_state["layer_states"]:
+            if layer_state["type"] == "dense":
+                activation_func = None
+                if (
+                    "activation" in layer_state
+                    and layer_state["activation"] in activation_map
+                ):
+                    activation_func = activation_map[layer_state["activation"]]
+
+                layer = DenseLayer(
+                    output_size=layer_state["output_size"],
+                    activation=activation_func,
+                    init=layer_state["init"],
+                    bias_init=layer_state["bias_init"],
+                    mean=layer_state["mean"],
+                    var=layer_state["var"],
+                    lower_bound=layer_state["lower_bound"],
+                    upper_bound=layer_state["upper_bound"],
+                    seed=layer_state["seed"],
+                    reg_type=layer_state["reg_type"],
+                    reg_param=layer_state["reg_param"],
+                )
+
+                layer.weights = Value(layer_state["weights"])
+                layer.biases = Value(layer_state["biases"])
+
+                loaded_model.add_layer(layer)
+
+        print(f"Model loaded from {filename}")
+        return loaded_model
 
 
 def print_parameters(layer, num_elements=5):
